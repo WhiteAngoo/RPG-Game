@@ -8,7 +8,7 @@ steps:
     args: ['run', 'build']
 
   # 3단계: Firebase 배포
-  - name: 'gcr.io/cloud-builders/firebase'
+  - name: 'gcr.io/cloud-builders/firebase:master'
     args: ['deploy', '--project', 'rpg-trade-game', '--only', 'hosting']
 
 options:
