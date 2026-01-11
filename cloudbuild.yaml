@@ -5,17 +5,12 @@ steps:
 
   # 2단계: 빌드 실행 (메모리 제한을 풀고 타입 체크는 생략)
   - name: 'gcr.io/cloud-builders/npm'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        # 메모리 할당량을 늘려주고 빌드만 수행 (tsc 생략)
-        export NODE_OPTIONS=--max-old-space-size=2048
-        npm run build || ./node_modules/.bin/vite build
+    args: ['run', 'build']
 
   # 3단계: Firebase 배포
   - name: 'gcr.io/cloud-builders/firebase'
     args: ['deploy', '--project', 'rpg-trade-game', '--only', 'hosting']
 
 options:
-  logging: NONE
+  machineType: 'E2_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
