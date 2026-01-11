@@ -1,0 +1,5 @@
+{
+  "name": "Mobile RPG Base System",
+  "description": "A foundational character and inventory system for mobile webview RPGs, featuring class-based stat generation and weight-limited inventory management.",
+  "requestFramePermissions": []
+}
