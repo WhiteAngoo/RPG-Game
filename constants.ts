@@ -1,8 +1,6 @@
 
 import { JobClass, JobDefinition, ItemType, City, TradeItem, Stats } from './types';
 
-// 임시 이미지 URL 사용 (실제 파일이 준비되면 로컬 경로로 변경하세요)
-// 예: '/images/heroes/warrior.png'
 export const JOB_IMAGES: Record<JobClass, string> = {
   [JobClass.WARRIOR]: '/images/heroes/warrior.png', // Dark Red
   [JobClass.WIZARD]: '/images/heroes/wizard.png',   // Dark Blue

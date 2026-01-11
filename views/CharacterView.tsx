@@ -20,7 +20,13 @@ export const CharacterView: React.FC<CharacterViewProps> = ({ character, onSellI
           <img 
             src={JOB_IMAGES[character.job]} 
             alt={character.job} 
-            className="max-h-full max-w-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] z-0" 
+            className="max-h-full max-w-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] z-0"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null; // Prevent infinite loop
+              // Fallback to placeholder if local image fails (which often returns index.html causing text/html error)
+              target.src = `https://placehold.co/400x600/1e293b/ffffff?text=${character.job}`;
+            }}
           />
           <div className="absolute bottom-2 left-3 z-20">
              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{character.job}</div>

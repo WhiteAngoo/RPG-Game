@@ -26,15 +26,9 @@ export const MapView: React.FC<MapViewProps> = ({ cities, character, activePlaye
       <div className="h-1/2 relative bg-slate-900 overflow-hidden group border-b border-slate-800">
         {/* World Map Image */}
         <img 
-          src="/images/map/world.png" 
+          src="https://placehold.co/1200x800/1e293b/475569?text=World+Map"
           alt="World Map" 
           className="w-full h-full object-cover opacity-80"
-          onError={(e) => {
-            // Fallback if image missing
-            e.currentTarget.style.display = 'none';
-            e.currentTarget.parentElement!.style.backgroundImage = 'radial-gradient(circle at 1px 1px, #475569 1px, transparent 0)';
-            e.currentTarget.parentElement!.style.backgroundSize = '20px 20px';
-          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent pointer-events-none" />
 
