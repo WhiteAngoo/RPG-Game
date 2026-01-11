@@ -12,5 +12,5 @@ steps:
   - name: 'gcr.io/cloud-builders/firebase'
     args: ['deploy', '--project', 'rpg-trade-game', '--only', 'hosting']
 
-    options:
+options:
   logging: CLOUD_LOGGING_ONLY
