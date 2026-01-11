@@ -32,6 +32,7 @@ export interface Item {
   type: ItemType;
   price: number;
   basePrice: number;
+  originCity?: string; // Added to track where the item was bought
 }
 
 export interface Character {

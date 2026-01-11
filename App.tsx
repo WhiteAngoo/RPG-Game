@@ -215,7 +215,12 @@ const App: React.FC = () => {
     loot.forEach(item => {
       const itemWeight = TradeSystem.getWeight(character.job, item);
       if (currentWeight + itemWeight <= limit && addedItemsCount < 2) {
-        newInventory.push({ ...item, id: Math.random().toString(36).substr(2, 9) });
+        // 전리품은 originCity를 'Battlefield' 등으로 설정하거나 비워둘 수 있습니다.
+        newInventory.push({ 
+          ...item, 
+          id: Math.random().toString(36).substr(2, 9),
+          originCity: '전리품'
+        });
         addedItemsCount++;
         addLog(`${item.name}을(를) 획득했습니다.`, 'trade');
       }
@@ -286,7 +291,8 @@ const App: React.FC = () => {
       weight: tradeItem.weight,
       type: tradeItem.type,
       basePrice: tradeItem.basePrice,
-      price: price
+      price: price,
+      originCity: currentCity.name // 구매 도시 기록
     };
 
     setCharacter(prev => prev ? {
@@ -313,6 +319,15 @@ const App: React.FC = () => {
       inventory: prev.inventory.filter(i => i.id !== inventoryItem.id)
     } : null);
     addLog(`${inventoryItem.name} 판매 (+${sellPrice}G). 전역 시세가 변동됩니다.`, 'trade');
+  };
+
+  const handleDiscard = (item: Item) => {
+    if (!character) return;
+    setCharacter(prev => prev ? {
+      ...prev,
+      inventory: prev.inventory.filter(i => i.id !== item.id)
+    } : null);
+    addLog(`${item.name}을(를) 버렸습니다.`, 'info');
   };
 
   const totalWeight = useMemo(() => 
@@ -368,7 +383,8 @@ const App: React.FC = () => {
               <InventoryView 
                 character={character} 
                 currentCity={currentCity} 
-                onSellItem={handleSell} 
+                onSellItem={handleSell}
+                onDiscardItem={handleDiscard}
               />
             )}
             {view === 'map' && (
