@@ -6,7 +6,8 @@ steps:
   # 2단계: 소스 코드를 웹 파일로 변환 (npm run build)
   # 이 과정이 끝나면 프로젝트에 'dist' 폴더가 생깁니다.
   - name: 'gcr.io/cloud-builders/npm'
-    args: ['run', 'build']
+    entrypoint: 'bash'
+    args: ['-c', 'npm run build']
 
   # 3단계: 빌드된 'dist' 폴더의 파일들을 Firebase로 업로드
   - name: 'gcr.io/cloud-builders/firebase'
