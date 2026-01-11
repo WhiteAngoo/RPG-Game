@@ -11,3 +11,6 @@ steps:
   # 3단계: 빌드된 'dist' 폴더의 파일들을 Firebase로 업로드
   - name: 'gcr.io/cloud-builders/firebase'
     args: ['deploy', '--project', 'rpg-trade-game', '--only', 'hosting']
+
+    options:
+  logging: CLOUD_LOGGING_ONLY
