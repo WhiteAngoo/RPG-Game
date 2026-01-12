@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character, Item } from '../types';
 import { JOB_IMAGES } from '../constants';
 import { ItemSlot } from '../components/ItemSlot';
@@ -10,6 +10,38 @@ interface CharacterViewProps {
 }
 
 export const CharacterView: React.FC<CharacterViewProps> = ({ character, onSellItem }) => {
+  // Image path state management for retry logic
+  const [imgSrc, setImgSrc] = useState<string>(JOB_IMAGES[character.job]);
+  const [hasRetriedCap, setHasRetriedCap] = useState(false);
+
+  // Reset state when job changes
+  useEffect(() => {
+    setImgSrc(JOB_IMAGES[character.job]);
+    setHasRetriedCap(false);
+  }, [character.job]);
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.target as HTMLImageElement;
+    
+    // 1. Try Capitalized filename if lowercase fails (e.g. warrior.png -> Warrior.png)
+    if (!hasRetriedCap) {
+      setHasRetriedCap(true);
+      const originalPath = JOB_IMAGES[character.job];
+      const parts = originalPath.split('/');
+      const filename = parts.pop();
+      if (filename) {
+        const capitalizedFilename = filename.charAt(0).toUpperCase() + filename.slice(1);
+        const newPath = [...parts, capitalizedFilename].join('/');
+        setImgSrc(newPath);
+        return;
+      }
+    }
+
+    // 2. If even Capitalized fails, show placeholder
+    target.onerror = null; // Prevent infinite loop
+    target.src = `https://placehold.co/400x600/1e293b/ffffff?text=${character.job}`;
+  };
+
   return (
     <div className="h-full flex flex-col animate-in fade-in slide-in-from-bottom-2 duration-300">
       {/* Top Section: Split 50/50 */}
@@ -18,15 +50,10 @@ export const CharacterView: React.FC<CharacterViewProps> = ({ character, onSellI
         <div className="w-1/2 bg-slate-900 relative overflow-hidden flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10" />
           <img 
-            src={JOB_IMAGES[character.job]} 
+            src={imgSrc}
             alt={character.job} 
             className="max-h-full max-w-full object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.1)] z-0"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.onerror = null; // Prevent infinite loop
-              // Fallback to placeholder if local image fails (which often returns index.html causing text/html error)
-              target.src = `https://placehold.co/400x600/1e293b/ffffff?text=${character.job}`;
-            }}
+            onError={handleImageError}
           />
           <div className="absolute bottom-2 left-3 z-20">
              <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{character.job}</div>

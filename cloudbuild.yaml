@@ -7,6 +7,9 @@ steps:
   - name: 'gcr.io/cloud-builders/npm'
     args: ['run', 'build']
 
+  - name: 'ubuntu'
+    args: ['ls', '-R', 'dist/images']
+
   # 3단계: Firebase 배포
   - name: 'us-docker.pkg.dev/firebase-cli/us/firebase'
     args: ['deploy', '--project', 'rpg-trade-game', '--only', 'hosting']
