@@ -1,5 +1,8 @@
 steps:
   # 1단계: 라이브러리 설치 (캐시 없이 클린 설치)
+  - name: 'ubuntu'
+    args: ['rm', '-rf', 'dist']
+    
   - name: 'gcr.io/cloud-builders/npm' # 버전을 명시해주는 것이 안전합니다.
     args: ['install']
 
