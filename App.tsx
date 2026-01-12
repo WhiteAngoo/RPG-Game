@@ -18,6 +18,7 @@ import { CharacterView } from './views/CharacterView';
 import { MarketView } from './views/MarketView';
 import { InventoryView } from './views/InventoryView';
 import { MapView } from './views/MapView';
+import { ImageConverterView } from './views/ImageConverterView';
 
 const world = new WorldManager();
 const network = NetworkManager.getInstance();
@@ -27,7 +28,7 @@ const App: React.FC = () => {
   const [isCreating, setIsCreating] = useState(true);
   const [isTraveling, setIsTraveling] = useState(false);
   const [, setTravelProgress] = useState(0);
-  const [view, setView] = useState<'inventory' | 'shop' | 'map' | 'character'>('character');
+  const [view, setView] = useState<'inventory' | 'shop' | 'map' | 'character' | 'admin'>('character');
   const [cities, setCities] = useState<City[]>(world.getCities());
   
   // Network States
@@ -400,6 +401,9 @@ const App: React.FC = () => {
                 character={character} 
                 onSellItem={handleSell} 
               />
+            )}
+            {view === 'admin' && (
+              <ImageConverterView />
             )}
           </>
         )}

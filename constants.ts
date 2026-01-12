@@ -1,11 +1,12 @@
 
 import { JobClass, JobDefinition, ItemType, City, TradeItem, Stats } from './types';
+import { IMAGE_ASSETS } from './imageAssets';
 
 export const JOB_IMAGES: Record<JobClass, string> = {
-  [JobClass.WARRIOR]: '/images/heroes/warrior.png', // Dark Red
-  [JobClass.WIZARD]: '/images/heroes/wizard.png',   // Dark Blue
-  [JobClass.THIEF]: '/images/heroes/thief.png',     // Dark Green
-  [JobClass.PRIEST]: '/images/heroes/priest.png'    // Dark Amber
+  [JobClass.WARRIOR]: IMAGE_ASSETS.warrior,
+  [JobClass.WIZARD]: IMAGE_ASSETS.wizard,
+  [JobClass.THIEF]: IMAGE_ASSETS.thief,
+  [JobClass.PRIEST]: IMAGE_ASSETS.priest
 };
 
 export const JOB_DEFINITIONS: Record<JobClass, JobDefinition> = {
