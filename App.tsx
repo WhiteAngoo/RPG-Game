@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { JobClass, Character, Item, City, TradeItem, Encounter, EncounterType, CombatLog, NetworkState } from './types';
-import { WEIGHT_LIMIT_MULTIPLIER } from './constants';
-import { GameService, TradeSystem, WorldManager, CombatSystem } from './services/gameService';
+import { WEIGHT_LIMIT_MULTIPLIER, INITIAL_CITIES, JOB_DEFINITIONS, INITIAL_PLAYER_STATS, DEFAULT_TRADE_GOODS } from './constants';
+import { GameService, TradeSystem, WorldManager, CombatSystem, LootSystem } from './services/gameService';
 import { NetworkManager } from './services/networkManager';
 import { resolveCombatRound } from './services/geminiService';
 
@@ -28,9 +27,9 @@ const App: React.FC = () => {
   const [isCreating, setIsCreating] = useState(true);
   const [isTraveling, setIsTraveling] = useState(false);
   const [, setTravelProgress] = useState(0);
-  const [view, setView] = useState<'inventory' | 'shop' | 'map' | 'character' | 'admin'>('character');
+  const [view, setView] = useState<'inventory' | 'shop' | 'map' | 'character'>('character');
   const [cities, setCities] = useState<City[]>(world.getCities());
-  
+
   // Network States
   const [networkState, setNetworkState] = useState<NetworkState>({ onlineCount: 0, serverStatus: 'connecting' });
   const [activePlayers, setActivePlayers] = useState<any[]>([]);
@@ -77,9 +76,9 @@ const App: React.FC = () => {
     }
   }, [character, isTraveling]);
 
-  const currentCity = useMemo(() => 
+  const currentCity = useMemo(() =>
     cities.find(c => c.id === character?.currentCityId) || cities[0]
-  , [character?.currentCityId, cities]);
+    , [character?.currentCityId, cities]);
 
   const handleCreate = (job: JobClass) => {
     const newChar = GameService.createCharacter("플레이어", job);
@@ -100,7 +99,7 @@ const App: React.FC = () => {
 
     setIsTraveling(true);
     setTravelProgress(0);
-    
+
     addLog(`${targetCity.name}(으)로 이동을 시작합니다...`, 'info');
 
     const duration = 3000;
@@ -117,22 +116,22 @@ const App: React.FC = () => {
         encounterTriggered = true;
         clearInterval(timer);
         setIsTraveling(false);
-        
+
         const newEncounter = CombatSystem.generateEncounter(activePlayers, character!.id);
         // Initialize combat HP
         newEncounter.currentHp = 100;
         newEncounter.maxHp = 100;
-        
+
         setEncounter(newEncounter);
         setCombatAnim({ playerHp: 100, enemyHp: 100 });
         setCombatNarrative(`${newEncounter.name}이(가) 앞을 가로막았습니다!`);
-        
+
         if (newEncounter.type === EncounterType.PLAYER) {
-           addLog(`${newEncounter.name} 플레이어를 길에서 조우했습니다!`, 'combat');
+          addLog(`${newEncounter.name} 플레이어를 길에서 조우했습니다!`, 'combat');
         } else if (newEncounter.type === EncounterType.MARAUDER) {
-           addLog(`위험한 ${newEncounter.name}이(가) 나타났습니다!`, 'danger');
+          addLog(`위험한 ${newEncounter.name}이(가) 나타났습니다!`, 'danger');
         } else {
-           addLog(`${newEncounter.name}을(를) 만났습니다.`, 'info');
+          addLog(`${newEncounter.name}을(를) 만났습니다.`, 'info');
         }
         return;
       }
@@ -155,7 +154,7 @@ const App: React.FC = () => {
     if (!character || !encounter || isCombatProcessing) return;
 
     setIsCombatProcessing(true);
-    
+
     try {
       const result = await resolveCombatRound(
         character.name,
@@ -205,20 +204,20 @@ const App: React.FC = () => {
   const winCombat = () => {
     if (!character || !encounter) return;
     addLog(`전투 승리! ${encounter.name}을(를) 제압했습니다.`, 'combat');
-    
+
     const loot = encounter.inventory;
     const currentWeight = GameService.calculateTotalWeight(character.inventory, character.job);
     const limit = character.currentStats.str * WEIGHT_LIMIT_MULTIPLIER;
-    
+
     let addedItemsCount = 0;
     const newInventory = [...character.inventory];
-    
+
     loot.forEach(item => {
       const itemWeight = TradeSystem.getWeight(character.job, item);
       if (currentWeight + itemWeight <= limit && addedItemsCount < 2) {
         // 전리품은 originCity를 'Battlefield' 등으로 설정하거나 비워둘 수 있습니다.
-        newInventory.push({ 
-          ...item, 
+        newInventory.push({
+          ...item,
           id: Math.random().toString(36).substr(2, 9),
           originCity: '전리품'
         });
@@ -231,12 +230,12 @@ const App: React.FC = () => {
     setEncounter(null);
     setCombatAnim(null);
     setCombatNarrative("");
-    setView('shop'); 
+    setView('shop');
   };
 
   const loseCombat = () => {
     if (!character) return;
-    
+
     if (character.inventory.length > 0) {
       const sorted = [...character.inventory].sort((a, b) => b.price - a.price);
       const lost = sorted[0];
@@ -248,7 +247,7 @@ const App: React.FC = () => {
     } else {
       addLog("전투 패배... 다행히 잃어버린 물건은 없습니다.", 'error');
     }
-    
+
     setEncounter(null);
     setCombatAnim(null);
     setCombatNarrative("");
@@ -269,39 +268,61 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBuy = async (tradeItem: TradeItem) => {
+  const handleBuy = async (tradeItem: TradeItem, quantity: number = 1) => {
     if (!character) return;
     const check = TradeSystem.canTrade(character.job, tradeItem, true);
     if (!check.can) { alert(check.reason); return; }
 
-    const price = TradeSystem.getEffectivePrice(character.job, currentCity, tradeItem, true);
-    if (character.gold < price) { alert("골드가 부족합니다."); return; }
-    if (tradeItem.stock <= 0) { alert("재고가 부족합니다."); return; }
+    const pricePerUnit = TradeSystem.getEffectivePrice(character.job, currentCity, tradeItem, true);
+    const totalPrice = pricePerUnit * quantity;
+
+    if (character.gold < totalPrice) { alert("골드가 부족합니다."); return; }
+    if (tradeItem.stock < quantity) { alert("재고가 부족합니다."); return; }
 
     const itemWeight = TradeSystem.getWeight(character.job, tradeItem);
+    const totalWeightToAdd = itemWeight * quantity;
     const currentWeight = GameService.calculateTotalWeight(character.inventory, character.job);
     const limit = character.currentStats.str * WEIGHT_LIMIT_MULTIPLIER;
 
-    if (currentWeight + itemWeight > limit) { alert("무게 한도를 초과했습니다."); return; }
+    if (currentWeight + totalWeightToAdd > limit) { alert("무게 한도를 초과했습니다."); return; }
 
-    world.updateStock(currentCity.id, tradeItem.name, -1);
-    
-    const newItem: Item = {
+    world.updateStock(currentCity.id, tradeItem.name, -quantity);
+
+    const newItems: Item[] = Array.from({ length: quantity }).map(() => ({
       id: Math.random().toString(36).substr(2, 9),
       name: tradeItem.name,
       weight: tradeItem.weight,
       type: tradeItem.type,
       basePrice: tradeItem.basePrice,
-      price: price,
+      price: pricePerUnit,
       originCity: currentCity.name // 구매 도시 기록
-    };
+    }));
 
     setCharacter(prev => prev ? {
       ...prev,
-      gold: prev.gold - price,
-      inventory: [...prev.inventory, newItem]
+      gold: prev.gold - totalPrice,
+      inventory: [...prev.inventory, ...newItems]
     } : null);
-    addLog(`${tradeItem.name} 구매 (${price}G). 서버에 반영되었습니다.`, 'trade');
+    addLog(`${tradeItem.name} ${quantity}개 구매 (${totalPrice}G). 서버에 반영되었습니다.`, 'trade');
+  };
+
+  const handleUseItem = (item: Item) => {
+    if (!item.name.includes('전리품')) return;
+
+    const newItems = LootSystem.openLootSack(item.name, DEFAULT_TRADE_GOODS);
+    if (newItems) {
+      setCharacter(prev => {
+        if (!prev) return null;
+        const remainingInventory = prev.inventory.filter(i => i.id !== item.id);
+        return {
+          ...prev,
+          inventory: [...remainingInventory, ...newItems]
+        };
+      });
+
+      const itemNames = newItems.map(i => i.name).join(', ');
+      addLog(`${item.name}을(를) 개봉하여 [${itemNames}]을(를) 획득했습니다!`, 'trade');
+    }
   };
 
   const handleSell = async (inventoryItem: Item) => {
@@ -331,13 +352,13 @@ const App: React.FC = () => {
     addLog(`${item.name}을(를) 버렸습니다.`, 'info');
   };
 
-  const totalWeight = useMemo(() => 
+  const totalWeight = useMemo(() =>
     character ? GameService.calculateTotalWeight(character.inventory, character.job) : 0
-  , [character]);
+    , [character]);
 
-  const weightLimit = useMemo(() => 
+  const weightLimit = useMemo(() =>
     character ? character.currentStats.str * WEIGHT_LIMIT_MULTIPLIER : 0
-  , [character]);
+    , [character]);
 
   if (isCreating) {
     return <CharacterCreation networkState={networkState} onSelectClass={handleCreate} />;
@@ -360,11 +381,11 @@ const App: React.FC = () => {
       </div>
 
       {character && (
-        <GameHeader 
-          character={character} 
-          currentCity={currentCity} 
-          currentView={view} 
-          onNavigateToMap={() => setView('map')} 
+        <GameHeader
+          character={character}
+          currentCity={currentCity}
+          currentView={view}
+          onNavigateToMap={() => setView('map')}
         />
       )}
 
@@ -372,54 +393,53 @@ const App: React.FC = () => {
         {character && (
           <>
             {view === 'shop' && (
-              <MarketView 
-                currentCity={currentCity} 
-                character={character} 
-                totalWeight={totalWeight} 
-                weightLimit={weightLimit} 
-                onBuyItem={handleBuy} 
+              <MarketView
+                currentCity={currentCity}
+                character={character}
+                totalWeight={totalWeight}
+                weightLimit={weightLimit}
+                onBuyItem={handleBuy}
               />
             )}
             {view === 'inventory' && (
-              <InventoryView 
-                character={character} 
-                currentCity={currentCity} 
+              <InventoryView
+                character={character}
+                currentCity={currentCity}
                 onSellItem={handleSell}
                 onDiscardItem={handleDiscard}
+                onUseItem={handleUseItem}
               />
             )}
             {view === 'map' && (
-              <MapView 
-                cities={cities} 
-                character={character} 
-                activePlayers={activePlayers} 
-                onStartTravel={startTravel} 
+              <MapView
+                cities={cities}
+                character={character}
+                activePlayers={activePlayers}
+                onStartTravel={startTravel}
               />
             )}
             {view === 'character' && (
-              <CharacterView 
-                character={character} 
-                onSellItem={handleSell} 
+              <CharacterView
+                character={character}
+                onSellItem={handleSell}
               />
             )}
-            {view === 'admin' && (
-              <ImageConverterView />
-            )}
+
           </>
         )}
       </main>
 
       <LogConsole logs={logs} />
-      <CombatModal 
-        encounter={encounter} 
-        character={character} 
+      <CombatModal
+        encounter={encounter}
+        character={character}
         combatAnim={combatAnim}
         narrative={combatNarrative}
         isProcessing={isCombatProcessing}
-        onBattle={() => handleCombatAction('ATTACK')} 
+        onBattle={() => handleCombatAction('ATTACK')}
         onMagic={() => handleCombatAction('MAGIC')}
-        onBribe={handleBribe} 
-        onFlee={() => handleCombatAction('FLEE')} 
+        onBribe={handleBribe}
+        onFlee={() => handleCombatAction('FLEE')}
       />
       <BottomNav currentView={view} onViewChange={setView} />
     </div>

@@ -7,21 +7,21 @@ export class CombatSystem {
   static calculatePower(stats: Stats, isAttacker: boolean, job?: JobClass): number {
     const randomBonus = Math.floor(Math.random() * 20) + 1;
     let power = 0;
-    
+
     if (isAttacker) {
       power = (stats.str * 0.6) + (stats.dex * 0.4) + randomBonus;
       if (job === JobClass.WARRIOR) power += 15;
     } else {
       power = (stats.str * 0.7) + (stats.wis * 0.3) + randomBonus;
     }
-    
+
     return power;
   }
 
   static generateEncounter(activePlayers: any[] = [], currentUserId: string = ''): Encounter {
     // 40% probability of player encounter if other players are online
     const otherPlayers = activePlayers.filter(p => p.id !== currentUserId);
-    
+
     if (otherPlayers.length > 0 && Math.random() < 0.4) {
       const targetPlayer = otherPlayers[Math.floor(Math.random() * otherPlayers.length)];
       return {
@@ -39,7 +39,7 @@ export class CombatSystem {
     const type = isMarauder ? EncounterType.MARAUDER : EncounterType.MERCHANT;
     const name = isMarauder ? "숲의 도적" : "떠돌이 상인";
     const description = isMarauder ? "숲속에서 당신의 짐을 노리고 나타난 도적입니다." : "지나가던 상인이 거래를 제안...하지 않고 시비를 겁니다.";
-    
+
     // Explicitly define stats
     const stats: Stats = {
       str: Math.floor(Math.random() * 40) + 20,
@@ -49,11 +49,54 @@ export class CombatSystem {
     };
 
     const loot: Item[] = [
-      { id: 'loot1', name: "전리품 보따리", weight: 5, type: ItemType.NORMAL, basePrice: 300, price: 300 },
+      { id: 'loot1', name: "하급 전리품", weight: 2, type: ItemType.NORMAL, basePrice: 300, price: 300 }, // Default to small
       { id: 'loot2', name: "금화 주머니", weight: 1, type: ItemType.NORMAL, basePrice: 800, price: 800 },
     ];
 
+    // Determine loot tier based on stats or random chance
+    const roll = Math.random();
+    if (roll < 0.1) loot[0] = { ...loot[0], name: LootSystem.LOOT_TIERS.GIANT.name, weight: LootSystem.LOOT_TIERS.GIANT.weight, basePrice: 5000, price: 5000 };
+    else if (roll < 0.3) loot[0] = { ...loot[0], name: LootSystem.LOOT_TIERS.LARGE.name, weight: LootSystem.LOOT_TIERS.LARGE.weight, basePrice: 2000, price: 2000 };
+    else if (roll < 0.6) loot[0] = { ...loot[0], name: LootSystem.LOOT_TIERS.MEDIUM.name, weight: LootSystem.LOOT_TIERS.MEDIUM.weight, basePrice: 800, price: 800 };
+
     return { type, name, description, stats, inventory: loot };
+  }
+
+}
+
+export class LootSystem {
+  static readonly LOOT_TIERS = {
+    SMALL: { name: "하급 전리품", min: 1, max: 2, weight: 2 },
+    MEDIUM: { name: "중급 전리품", min: 2, max: 4, weight: 4 },
+    LARGE: { name: "상급 전리품", min: 5, max: 7, weight: 8 },
+    GIANT: { name: "최상급 전리품", min: 8, max: 10, weight: 15 }
+  };
+
+  static getLootTier(name: string) {
+    return Object.values(this.LOOT_TIERS).find(t => t.name === name);
+  }
+
+  static openLootSack(itemName: string, possibleItems: TradeItem[]): Item[] | null {
+    const tier = this.getLootTier(itemName);
+    if (!tier) return null;
+
+    const count = Math.floor(Math.random() * (tier.max - tier.min + 1)) + tier.min;
+    const items: Item[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const template = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+      items.push({
+        id: Math.random().toString(36).substr(2, 9),
+        name: template.name,
+        weight: template.weight,
+        type: template.type,
+        basePrice: template.basePrice,
+        price: template.price, // Base value, might adjust later
+        originCity: 'Unknown'
+      });
+    }
+
+    return items;
   }
 }
 
@@ -145,7 +188,7 @@ export class WorldManager {
 export class GameService {
   static generateRandomStats(job: JobClass): Pick<Stats, 'str' | 'int' | 'dex' | 'wis'> {
     const limits = JOB_DEFINITIONS[job].maxStats;
-    const getRandom = (max: number, min: number = 5) => 
+    const getRandom = (max: number, min: number = 5) =>
       Math.floor(Math.random() * (max - min + 1) + min);
 
     return {
@@ -163,7 +206,7 @@ export class GameService {
   static createCharacter(name: string, job: JobClass): Character {
     const randomStats = this.generateRandomStats(job);
     const id = Math.random().toString(36).substr(2, 9);
-    
+
     const fullStats: Stats = {
       ...INITIAL_PLAYER_STATS,
       ...randomStats

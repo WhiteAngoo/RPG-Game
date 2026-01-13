@@ -38,7 +38,7 @@ export const JOB_DEFINITIONS: Record<JobClass, JobDefinition> = {
 
 export const WEIGHT_LIMIT_MULTIPLIER = 5;
 
-const DEFAULT_TRADE_GOODS: TradeItem[] = [
+export const DEFAULT_TRADE_GOODS: TradeItem[] = [
   { name: "식량", weight: 2, type: ItemType.NORMAL, basePrice: 50, price: 50, stock: 100, maxStock: 200 },
   { name: "철광석", weight: 10, type: ItemType.NORMAL, basePrice: 200, price: 200, stock: 50, maxStock: 100 },
   { name: "마법 시약", weight: 1, type: ItemType.MAGIC, basePrice: 500, price: 500, stock: 20, maxStock: 50 },

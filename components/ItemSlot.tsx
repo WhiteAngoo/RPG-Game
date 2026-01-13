@@ -1,6 +1,6 @@
-
 import React from 'react';
 import { Item, ItemType } from '../types';
+import { ITEM_IMAGES } from '../itemAssets';
 
 interface ItemSlotProps {
   item?: Item;
@@ -12,16 +12,16 @@ interface ItemSlotProps {
   onMouseLeave?: () => void;
 }
 
-export const ItemSlot: React.FC<ItemSlotProps> = ({ 
-  item, 
-  type, 
-  onClick, 
+export const ItemSlot: React.FC<ItemSlotProps> = ({
+  item,
+  type,
+  onClick,
   className,
   showTooltip = true,
   onMouseEnter,
   onMouseLeave
 }) => (
-  <div 
+  <div
     onClick={onClick}
     onMouseEnter={onMouseEnter}
     onMouseLeave={onMouseLeave}
@@ -32,8 +32,12 @@ export const ItemSlot: React.FC<ItemSlotProps> = ({
     )}
     {item && (
       <>
-        <div className={`w-8 h-8 rounded-sm ${item.type === ItemType.MAGIC ? 'bg-purple-900/50' : item.type === ItemType.STOLEN ? 'bg-red-900/50' : 'bg-slate-700/50'} flex items-center justify-center`}>
-           <span className="text-[10px] font-black text-white/80">{item.name.substring(0, 1)}</span>
+        <div className={`w-full h-full p-1 rounded-sm ${item.type === ItemType.MAGIC ? 'bg-purple-900/20' : item.type === ItemType.STOLEN ? 'bg-red-900/20' : 'bg-slate-700/20'} flex items-center justify-center overflow-hidden`}>
+          {ITEM_IMAGES[item.name] ? (
+            <img src={ITEM_IMAGES[item.name]} alt={item.name} className="w-full h-full object-contain pixelated" style={{ imageRendering: 'pixelated' }} />
+          ) : (
+            <span className="text-[10px] font-black text-white/50">{item.name.substring(0, 1)}</span>
+          )}
         </div>
         {/* 내부 툴팁 (showTooltip이 true일 때만 렌더링) */}
         {showTooltip && (
